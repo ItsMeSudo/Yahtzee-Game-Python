@@ -54,6 +54,9 @@ def start_configuration():
             print("Hibás bemenet. Kérlek, adj meg egy érvényes felhasználónevet.")
 
     clearscreen()
+    for row in player_data:
+        row[1] = None
+        row[2] = None
     
     while True:
         print("> Add meg az ellenfeled nehézségét:")
@@ -189,7 +192,7 @@ def main():
                     except ValueError:
                         print("Hiba: Nem érvényes egész számot adtál meg. Próbáld újra.")
             else:
-                if difficulty == 0:
+                if difficulty == 1:
                     final_result = matching_conditions[0]
                 else:
                     maxid = 0
@@ -222,9 +225,8 @@ def main():
                         break
             else:
                 final_result = "nullazo"
-                choice_index = 0
                 for index, sublist in enumerate(player_data):
-                    if sublist[0] == unused_fields[choice_index]:
+                    if sublist[0] == unused_fields[len(unused_fields)-1]:
                         nullazo_id = index
                         break
         
