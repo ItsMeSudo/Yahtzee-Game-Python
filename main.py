@@ -155,10 +155,11 @@ def main():
         
         matching_conditions = check_conditions(random_numbers, game_runs)
         unused_fields = get_unused_fields(playerfield(game_runs))
-        if matching_conditions == []:
-            print("Már minden olyan mező fel van használva ahova beírhatnád ezt a kombinációt.")
-        else :
-            print("Lehetőségek:", ", ".join(str(condition) for condition in matching_conditions))
+        if isPlayer:
+            if matching_conditions == []:
+                print("Már minden olyan mező fel van használva ahova beírhatnád ezt a kombinációt.")
+            else :
+                print("Lehetőségek:", ", ".join(str(condition) for condition in matching_conditions))
 
         if len(matching_conditions) > 1:
             if isPlayer:
@@ -176,7 +177,10 @@ def main():
 
                             if 0 <= choice_index < len(matching_conditions):
                                 final_result = matching_conditions[choice_index]
-                                print("Végső érték:", final_result)
+                                if isPlayer:
+                                    print("Végső érték:", final_result)
+                                else:
+                                    print("A gép választása:", final_result)
                                 errorhandle = False
                             else:
                                 print("Hibás választás, kilépés")
@@ -195,7 +199,10 @@ def main():
 
         elif len(matching_conditions) == 1:
             final_result = matching_conditions[0]
-            print("Végső érték:", final_result)
+            if isPlayer:
+                print("Végső érték:", final_result)
+            else:
+                print("A gép választása:", final_result)
         elif len(matching_conditions) == 0:
             if isPlayer:
                 while True:
@@ -282,6 +289,44 @@ def main():
         # playerscore = sum(player_data[1])
         # computerscore = sum(player_data[2])
         # print(playerscore, computerscore)
+
+        playervalue_count = 0
+        aivalue_count = 0
+
+        for row in player_data:
+            playervalue = row[1]
+            aivalue = row[2]
+
+            if playervalue is not None:
+                playervalue_count += 1
+
+            if aivalue is not None:
+                aivalue_count += 1
+
+                playervalue_sum = 0
+                aivalue_sum = 0
+
+        for row in player_data:
+            definition = row[0]
+            playervalue = row[1]
+            aivalue = row[2]
+
+            if playervalue is not None:
+                playervalue_sum += playervalue
+
+            if aivalue is not None:
+                aivalue_sum += aivalue
+
+        print("PlayerValue sum:", playervalue_sum)
+        print("AIValue sum:", aivalue_sum)
+        if (playervalue_count+aivalue_count)==18:
+            if playervalue_sum > aivalue_sum:
+                print(f"Győztes: {username}")
+            elif aivalue_sum > playervalue_sum:
+                print("A gép legyőzött téged :D")
+            else:
+                print("Döntetlen!")
+
         game_runs += 1
         game_run = any(None in sublist for sublist in player_data)
         input("Nyomj egy entert a folytatáshoz")
