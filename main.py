@@ -1,4 +1,4 @@
-import random, os
+import random, os, time, json
 
 username, difficulty, player_data, table_header, debug_mode, gamesavefile, gamedatas = "", 0, [
     ["Tetszőleges kombináció", None, None],
@@ -27,6 +27,7 @@ def save_table_to_file(table_data):
         file.close()
 
 def load_prev_game():
+    global player_data, table_header, username, difficulty, gamedatas
     table_data = []
     if os.path.exists(gamesavefile):
         with open(gamesavefile, mode='r') as file:
@@ -34,10 +35,44 @@ def load_prev_game():
             header = lines[0].strip().split(',')
             gamestate = lines[1].strip().split(',')+lines[2].strip().split(',')
             table_data = [line.strip().split(',') for line in lines[3:]]
-        print(header, gamestate, table_data)
-        # return True, table_data, header
+            gamestateresult = []
+            for i in range(0, len(gamestate), 2):
+                key = gamestate[i]
+                value = gamestate[i + 1]
+                if value.lower() == 'true' or value.lower() == 'false':
+                    value = value.lower() == 'true'
+                else:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        pass
+                gamestateresult.append([key, value])
+            tabledatares = []
+            for inner_list in table_data:
+                innerlistres = []
+                for value in inner_list:
+                    if value.lower() == 'none':
+                        innerlistres.append(None)
+                    elif value.isdigit():
+                        innerlistres.append(int(value))
+                    else:
+                        innerlistres.append(value)
+
+                tabledatares.append(innerlistres)
+
+        print(header, gamestateresult, tabledatares)
+        clearscreen()
+        player_data = tabledatares
+        table_header = header
+        gamedatas = gamestateresult
+        username = table_header[1]
+        difficulty = gamedatas[1][1]
+        print("Mentés sikeresen betöltve!")
+        print("A játék 3másodperc múlva indul.")
+        time.sleep(3)
+        main()
+         
     else:
-        # return False, [], []
         print("err")
 
 def getprevgame():
@@ -49,40 +84,76 @@ def getprevgame():
                 return True
     else:
         return False
+    
+def gettopstat():
+    clearscreen()
+    try:
+        with open('toplist.json', 'r') as file:
+            toplist = json.load(file)
+            print("Toplista:")
+            for idx, entry in enumerate(toplist, 1):
+                print(f"{idx}. {entry['name']} - {entry['score']} pont")
+            print("\n\n\n\n")
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("Nincs elmentett toplista.")
+
+def save_to_top(name, score):
+    try:
+        with open('toplist.json', 'r') as file:
+            toplist = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        toplist = []
+
+    toplist.append({'name': name, 'score': score})
+    toplist.sort(key=lambda x: x['score'], reverse=True)
+    toplist = toplist[:10]
+
+    with open('toplist.json', 'w') as file:
+        json.dump(toplist, file)
 
 def main_menu():
     global username
     clearscreen()
-    while True:
-        print("> Menu:")
-        if getprevgame():
-            print("1. Játék indítása")
-            print("2. Előző játékmenet betöltése")
-            print("3. Kilépés")
-            choice = input("Enter your choice (1/2/3): ")
-            if choice == "1":
-                start_configuration()
-                main()
-            elif choice == "2":
-                load_prev_game()
-            elif choice == "3":
-                print("Kilépés---")
-                break
+    try:
+        while True:
+            print("> Menu:")
+            if getprevgame():
+                print("1. Játék indítása")
+                print("2. Előző játékmenet betöltése")
+                print("3. Toplista megnézése")
+                print("4. Kilépés")
+                choice = input("Enter your choice (1/2/3/4): ")
+                if choice == "1":
+                    start_configuration()
+                    main()
+                elif choice == "2":
+                    load_prev_game()
+                elif choice == "3":
+                    gettopstat()
+                elif choice == "4":
+                    print("Kilépés---")
+                    break
+                else:
+                    print("Ez nem egy lehetőség.")
             else:
-                print("Ez nem egy lehetőség.")
-        else:
-            print("1. Játék indítása")
-            print("x. Előző játékmenet betöltése (Nem elérhető, nem található mentés.)")
-            print("2. Kilépés")
-            choice = input("Enter your choice (1/2): ")
-            if choice == "1":
-                start_configuration()
-                main()
-            elif choice == "2":
-                print("Kilépés---")
-                break
-            else:
-                print("Ez nem egy lehetőség.")
+                print("1. Játék indítása")
+                print("x. Előző játékmenet betöltése (Nem elérhető, nem található mentés.)")
+                print("2. Toplista megnézése")
+                print("3. Kilépés")
+                choice = input("Enter your choice (1/2/3): ")
+                if choice == "1":
+                    start_configuration()
+                    main()
+                elif choice == "2":
+                    gettopstat()
+                elif choice == "3":
+                    print("Kilépés---")
+                    break
+                else:
+                    print("Ez nem egy lehetőség.")
+    except KeyboardInterrupt:
+        print("\nProgram megszakítva!")
+        exit(1)
 
 
 
@@ -196,201 +267,208 @@ def playerfield(game_runs):
 def main():
     game_run = True
     game_runs = 1
-    while game_run:
-        isPlayer = None
-        clearscreen()
-        nullazo_id = None
-        random_numbers = generate_random_numbers()
-        print(f"Ez a(z) {game_runs}. kör.")
-        print("Dobott számok:", *random_numbers)
+    try:
+        while game_run:
+            isPlayer = None
+            clearscreen()
+            nullazo_id = None
+            random_numbers = generate_random_numbers()
+            print(f"Ez a(z) {game_runs}. kör.")
+            print("Dobott számok:", *random_numbers)
 
-        if game_runs%2 != 0:
-            print("Ez a gép köre!")
-            isPlayer = False
-        else: 
-            isPlayer = True
+            if game_runs%2 != 0:
+                print("Ez a gép köre!")
+                isPlayer = False
+            else: 
+                isPlayer = True
 
-        
-        matching_conditions = check_conditions(random_numbers, game_runs)
-        unused_fields = get_unused_fields(playerfield(game_runs))
-        if isPlayer:
-            if matching_conditions == []:
-                print("Már minden olyan mező fel van használva ahova beírhatnád ezt a kombinációt.")
-            else :
-                print("Lehetőségek:", ", ".join(str(condition) for condition in matching_conditions))
-
-        if len(matching_conditions) > 1:
+            
+            matching_conditions = check_conditions(random_numbers, game_runs)
+            unused_fields = get_unused_fields(playerfield(game_runs))
             if isPlayer:
-                errorhandle = True
-                while errorhandle:
-                    try:
-                        print("Több lehetőség is van. Válassz egyet:")
-                        for i, condition in enumerate(matching_conditions, 1):
-                            print(f"{i}. {condition}")
+                if matching_conditions == []:
+                    print("Már minden olyan mező fel van használva ahova beírhatnád ezt a kombinációt.")
+                else :
+                    print("Lehetőségek:", ", ".join(str(condition) for condition in matching_conditions))
 
-                        user_input = input("Írd be az általad választott lehetőség számát: ")
+            if len(matching_conditions) > 1:
+                if isPlayer:
+                    errorhandle = True
+                    while errorhandle:
+                        try:
+                            print("Több lehetőség is van. Válassz egyet:")
+                            for i, condition in enumerate(matching_conditions, 1):
+                                print(f"{i}. {condition}")
 
-                        if user_input.strip():
-                            choice_index = int(user_input) - 1
+                            user_input = input("Írd be az általad választott lehetőség számát: ")
 
-                            if 0 <= choice_index < len(matching_conditions):
-                                final_result = matching_conditions[choice_index]
-                                if isPlayer:
-                                    print("Végső érték:", final_result)
+                            if user_input.strip():
+                                choice_index = int(user_input) - 1
+
+                                if 0 <= choice_index < len(matching_conditions):
+                                    final_result = matching_conditions[choice_index]
+                                    if isPlayer:
+                                        print("Végső érték:", final_result)
+                                    else:
+                                        print("A gép választása:", final_result)
+                                    errorhandle = False
                                 else:
-                                    print("A gép választása:", final_result)
-                                errorhandle = False
+                                    print("Hibás választás, kilépés")
                             else:
-                                print("Hibás választás, kilépés")
-                        else:
-                            print("Hiba: Üres bemenet. Próbáld újra.")
-                    except ValueError:
-                        print("Hiba: Nem érvényes egész számot adtál meg. Próbáld újra.")
-            else:
-                if difficulty == 1:
-                    final_result = matching_conditions[0]
+                                print("Hiba: Üres bemenet. Próbáld újra.")
+                        except ValueError:
+                            print("Hiba: Nem érvényes egész számot adtál meg. Próbáld újra.")
                 else:
-                    maxid = 0
-                    for i in range(len(matching_conditions)):
-                        maxid = i
-                    final_result = matching_conditions[maxid]
+                    if difficulty == 1:
+                        final_result = matching_conditions[0]
+                    else:
+                        maxid = 0
+                        for i in range(len(matching_conditions)):
+                            maxid = i
+                        final_result = matching_conditions[maxid]
 
-        elif len(matching_conditions) == 1:
-            final_result = matching_conditions[0]
-            if isPlayer:
-                print("Végső érték:", final_result)
-            else:
-                print("A gép választása:", final_result)
-        elif len(matching_conditions) == 0:
-            if isPlayer:
-                while True:
-                    try:
-                        print("Jelölj meg egy üres kombinációt, amit a továbbiakban már nem tudsz elérni.")
-                        for i, condition in enumerate(unused_fields, 1):
-                            print(f"{i}. {condition}")
-                        choice_index = int(input("Válassz egyet: ")) - 1
-                        print(f"Kiválasztottad a: {unused_fields[choice_index]}")
-                        final_result = "nullazo"
-                        break
-                    except ValueError:
-                        print("Hiba: Nem érvényes egész számot adtál meg. Próbáld újra.")
-                for index, sublist in enumerate(player_data):
-                    if sublist[0] == unused_fields[choice_index]:
-                        nullazo_id = index
-                        break
-            else:
-                final_result = "nullazo"
-                for index, sublist in enumerate(player_data):
-                    if sublist[0] == unused_fields[len(unused_fields)-1]:
-                        nullazo_id = index
-                        break
-        
-        if final_result == "Tetszőleges kombináció":
-            ertek = sum(generated_numbers)
-            if can_insert_data(0, ertek, game_runs, debug_mode) == False:
-                print("Error lol 1")
+            elif len(matching_conditions) == 1:
+                final_result = matching_conditions[0]
+                if isPlayer:
+                    print("Végső érték:", final_result)
+                else:
+                    print("A gép választása:", final_result)
+            elif len(matching_conditions) == 0:
+                if isPlayer:
+                    while True:
+                        try:
+                            print("Jelölj meg egy üres kombinációt, amit a továbbiakban már nem tudsz elérni.")
+                            for i, condition in enumerate(unused_fields, 1):
+                                print(f"{i}. {condition}")
+                            choice_index = int(input("Válassz egyet: ")) - 1
+                            print(f"Kiválasztottad a: {unused_fields[choice_index]}")
+                            final_result = "nullazo"
+                            break
+                        except ValueError:
+                            print("Hiba: Nem érvényes egész számot adtál meg. Próbáld újra.")
+                    for index, sublist in enumerate(player_data):
+                        if sublist[0] == unused_fields[choice_index]:
+                            nullazo_id = index
+                            break
+                else:
+                    final_result = "nullazo"
+                    for index, sublist in enumerate(player_data):
+                        if sublist[0] == unused_fields[len(unused_fields)-1]:
+                            nullazo_id = index
+                            break
+            
+            if final_result == "Tetszőleges kombináció":
+                ertek = sum(generated_numbers)
+                if can_insert_data(0, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 1")
 
-        if final_result == "Pár":
-            global par_index
-            par_index = next((i for i, count in enumerate(counts) if count == 2), None)
-            ertek = 2 * unique_list[par_index]
-            if can_insert_data(1, ertek, game_runs, debug_mode) == False:
-                print("Error lol 2")
+            if final_result == "Pár":
+                global par_index
+                par_index = next((i for i, count in enumerate(counts) if count == 2), None)
+                ertek = 2 * unique_list[par_index]
+                if can_insert_data(1, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 2")
 
-        if final_result == "Drill":
-            global drill_index
-            drill_index = next((i for i, count in enumerate(counts) if count == 3), None)
-            ertek = 3 * unique_list[drill_index]
-            if can_insert_data(2, ertek, game_runs, debug_mode) == False:
-                print("Error lol 3")
+            if final_result == "Drill":
+                global drill_index
+                drill_index = next((i for i, count in enumerate(counts) if count == 3), None)
+                ertek = 3 * unique_list[drill_index]
+                if can_insert_data(2, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 3")
 
-        if final_result == "Két Pár":
-            global par1_index, par2_index
-            par1_index = next((i for i, count in enumerate(counts) if count == 2), None)
-            par2_index = next((i for i, count in enumerate(counts[par1_index+1:]) if count == 2), None) + par1_index + 1
-            ertek = 2 * unique_list[par1_index] + 2 * unique_list[par2_index]
-            if can_insert_data(3, ertek, game_runs, debug_mode) == False:
-                print("Error lol 4")
-        
-        if final_result == "Kis póker":
-            global kispoker_index
-            kispoker_index = next((i for i, count in enumerate(counts) if count == 4), None)
-            ertek = 4 * unique_list[kispoker_index]
-            if can_insert_data(4, ertek, game_runs, debug_mode) == False:
-                print("Error lol 5")
+            if final_result == "Két Pár":
+                global par1_index, par2_index
+                par1_index = next((i for i, count in enumerate(counts) if count == 2), None)
+                par2_index = next((i for i, count in enumerate(counts[par1_index+1:]) if count == 2), None) + par1_index + 1
+                ertek = 2 * unique_list[par1_index] + 2 * unique_list[par2_index]
+                if can_insert_data(3, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 4")
+            
+            if final_result == "Kis póker":
+                global kispoker_index
+                kispoker_index = next((i for i, count in enumerate(counts) if count == 4), None)
+                ertek = 4 * unique_list[kispoker_index]
+                if can_insert_data(4, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 5")
 
-        if final_result == "Full":
-            ertek = sum(generated_numbers)
-            if can_insert_data(5, ertek, game_runs, debug_mode) == False:
-                print("Error lol 6")
+            if final_result == "Full":
+                ertek = sum(generated_numbers)
+                if can_insert_data(5, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 6")
 
-        if final_result == "Kis sor":
-            ertek = 15
-            if can_insert_data(6, ertek, game_runs, debug_mode) == False:
-                print("Error lol 7")
+            if final_result == "Kis sor":
+                ertek = 15
+                if can_insert_data(6, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 7")
 
-        if final_result == "Nagy sor":
-            ertek = 20
-            if can_insert_data(7, ertek, game_runs, debug_mode) == False:
-                print("Error lol 8")
+            if final_result == "Nagy sor":
+                ertek = 20
+                if can_insert_data(7, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 8")
 
-        if final_result == "Nagy póker":
-            ertek = 50
-            if can_insert_data(8, ertek, game_runs, debug_mode) == False:
-                print("Error lol 9")
-        if final_result == "nullazo":
-            if can_insert_data(nullazo_id, 0, game_runs, debug_mode) == False:
-                print("Error lol 10")
+            if final_result == "Nagy póker":
+                ertek = 50
+                if can_insert_data(8, ertek, game_runs, debug_mode) == False:
+                    print("Error lol 9")
+            if final_result == "nullazo":
+                if can_insert_data(nullazo_id, 0, game_runs, debug_mode) == False:
+                    print("Error lol 10")
 
-        print(tabulate_data(player_data, table_header))
-        # playerscore = sum(player_data[1])
-        # computerscore = sum(player_data[2])
-        # print(playerscore, computerscore)
+            print(tabulate_data(player_data, table_header))
+            # playerscore = sum(player_data[1])
+            # computerscore = sum(player_data[2])
+            # print(playerscore, computerscore)
 
-        playervalue_count = 0
-        aivalue_count = 0
+            playervalue_count = 0
+            aivalue_count = 0
 
-        for row in player_data:
-            playervalue = row[1]
-            aivalue = row[2]
+            for row in player_data:
+                playervalue = row[1]
+                aivalue = row[2]
 
-            if playervalue is not None:
-                playervalue_count += 1
+                if playervalue is not None:
+                    playervalue_count += 1
 
-            if aivalue is not None:
-                aivalue_count += 1
+                if aivalue is not None:
+                    aivalue_count += 1
 
-                playervalue_sum = 0
-                aivalue_sum = 0
+                    playervalue_sum = 0
+                    aivalue_sum = 0
 
-        for row in player_data:
-            definition = row[0]
-            playervalue = row[1]
-            aivalue = row[2]
+            for row in player_data:
+                definition = row[0]
+                playervalue = row[1]
+                aivalue = row[2]
 
-            if playervalue is not None:
-                playervalue_sum += playervalue
+                if playervalue is not None:
+                    playervalue_sum += playervalue
 
-            if aivalue is not None:
-                aivalue_sum += aivalue
+                if aivalue is not None:
+                    aivalue_sum += aivalue
 
-        print("PlayerValue sum:", playervalue_sum)
-        print("AIValue sum:", aivalue_sum)
-        if (playervalue_count+aivalue_count)==18:
-            if playervalue_sum > aivalue_sum:
-                print(f"Győztes: {username}")
-            elif aivalue_sum > playervalue_sum:
-                print("A gép legyőzött téged :D")
-            else:
-                print("Döntetlen!")
+            print("PlayerValue sum:", playervalue_sum)
+            print("AIValue sum:", aivalue_sum)
+            if (playervalue_count+aivalue_count)==18:
+                if playervalue_sum > aivalue_sum:
+                    save_to_top(username, playervalue_sum)
+                    print(f"Győztes: {username}")
+                elif aivalue_sum > playervalue_sum:
+                    save_to_top("Gép", aivalue_sum)
+                    print("A gép legyőzött téged :D")
+                else:
+                    save_to_top(f"Gép+{username}", playervalue_sum)
+                    print("Döntetlen!")
 
-        game_runs += 1
-        game_run = any(None in sublist for sublist in player_data)
-        save_table_to_file(player_data)
-        input("Nyomj egy entert a folytatáshoz")
-        # if game_runs > 8:
-        #     game_run = False
-    save_table_to_file(None)
+            game_runs += 1
+            game_run = any(None in sublist for sublist in player_data)
+            save_table_to_file(player_data)
+            input("\nNyomj egy entert a folytatáshoz\n vagy ctrl+c-t a menübe való visszalépéshez (a játékállás mentve lesz)\n")
+            # if game_runs > 8:
+            #     game_run = False
+        save_table_to_file(None)
+    except KeyboardInterrupt:
+        clearscreen()
+        print("Játét mentve!\n") 
 
 def can_insert_data(combination, value, gamerunsnum, debug):
     id = playerfield(gamerunsnum)
