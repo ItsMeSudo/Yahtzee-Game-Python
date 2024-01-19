@@ -1,6 +1,6 @@
 import random, os, time, json
 
-username, difficulty, player_data, table_header, debug_mode, gamesavefile, gamedatas = "", 0, [
+username, difficulty, player_data, table_header, debug_mode, gamesavefile, gamedatas = None, 0, [
     ["Tetszőleges kombináció", None, None],
     ["Pár", None, None],
     ["Drill", None, None],
@@ -10,7 +10,7 @@ username, difficulty, player_data, table_header, debug_mode, gamesavefile, gamed
     ["Kis sor", None, None],
     ["Nagy sor", None, None],
     ["Nagy póker", None, None]
-], ["Érvényes kombinációk", "PlayerPont", "AI Pont"], False, "./gamesave.csv", [["IsRunning", False], ["Diff", None]]
+], ["Érvényes kombinációk", "PlayerPont", "AI Pont"], False, "./gamesave.csv", [["IsRunning", False], ["Diff", None], ["Runs", None]]
 
 def save_table_to_file(table_data):
     if table_data == None:
@@ -33,8 +33,8 @@ def load_prev_game():
         with open(gamesavefile, mode='r') as file:
             lines = file.readlines()
             header = lines[0].strip().split(',')
-            gamestate = lines[1].strip().split(',')+lines[2].strip().split(',')
-            table_data = [line.strip().split(',') for line in lines[3:]]
+            gamestate = lines[1].strip().split(',')+lines[2].strip().split(',')+lines[3].strip().split(',')
+            table_data = [line.strip().split(',') for line in lines[4:]]
             gamestateresult = []
             for i in range(0, len(gamestate), 2):
                 key = gamestate[i]
@@ -137,8 +137,8 @@ def main_menu():
                     print("Ez nem egy lehetőség.")
             else:
                 print("1. Játék indítása")
-                print("x. Előző játékmenet betöltése (Nem elérhető, nem található mentés.)")
                 print("2. Toplista megnézése")
+                print("x. Előző játékmenet betöltése (Nem elérhető, nem található mentés.)")
                 print("3. Kilépés")
                 choice = input("Enter your choice (1/2/3): ")
                 if choice == "1":
@@ -151,7 +151,7 @@ def main_menu():
                     break
                 else:
                     print("Ez nem egy lehetőség.")
-    except KeyboardInterrupt:
+    except KeyboardInterrupt or EOFError:
         print("\nProgram megszakítva!")
         exit(1)
 
@@ -266,7 +266,10 @@ def playerfield(game_runs):
 
 def main():
     game_run = True
-    game_runs = 1
+    if gamedatas[2][1]:
+        game_runs = gamedatas[2][1]
+    else:
+        game_runs = 1
     try:
         while game_run:
             isPlayer = None
@@ -436,7 +439,6 @@ def main():
                     aivalue_sum = 0
 
             for row in player_data:
-                definition = row[0]
                 playervalue = row[1]
                 aivalue = row[2]
 
@@ -446,7 +448,10 @@ def main():
                 if aivalue is not None:
                     aivalue_sum += aivalue
 
-            print("PlayerValue sum:", playervalue_sum)
+            if username:
+                print(f"{username} sum:", playervalue_sum)
+            else:
+                print("PlayerValue sum:", playervalue_sum)
             print("AIValue sum:", aivalue_sum)
             if (playervalue_count+aivalue_count)==18:
                 if playervalue_sum > aivalue_sum:
@@ -461,12 +466,13 @@ def main():
 
             game_runs += 1
             game_run = any(None in sublist for sublist in player_data)
+            gamedatas[2][1] = game_runs
             save_table_to_file(player_data)
             input("\nNyomj egy entert a folytatáshoz\n vagy ctrl+c-t a menübe való visszalépéshez (a játékállás mentve lesz)\n")
             # if game_runs > 8:
             #     game_run = False
         save_table_to_file(None)
-    except KeyboardInterrupt:
+    except KeyboardInterrupt or EOFError:
         clearscreen()
         print("Játét mentve!\n") 
 
