@@ -1,6 +1,6 @@
 import random, os
 
-username, difficulty, player_data, table_header, debug_mode = "", 0, [
+username, difficulty, player_data, table_header, debug_mode, gamesavefile, gamedatas = "", 0, [
     ["Tetszőleges kombináció", None, None],
     ["Pár", None, None],
     ["Drill", None, None],
@@ -10,29 +10,80 @@ username, difficulty, player_data, table_header, debug_mode = "", 0, [
     ["Kis sor", None, None],
     ["Nagy sor", None, None],
     ["Nagy póker", None, None]
-], ["Érvényes kombinációk", "PlayerPont", "AI Pont"], False
+], ["Érvényes kombinációk", "PlayerPont", "AI Pont"], False, "./gamesave.csv", [["IsRunning", False], ["Diff", None]]
+
+def save_table_to_file(table_data):
+    if table_data == None:
+        for row in player_data:
+            row[1] = None
+            row[2] = None
+        table_header[1] = "PlayerPont"
+        gamedatas[0][1], gamedatas[1][1] = False, None
+
+
+    with open(gamesavefile, mode='w', newline='') as file:
+        for row in [table_header] + gamedatas + player_data :
+            file.write(','.join(map(str, row)) + '\n')
+        file.close()
+
+def load_prev_game():
+    table_data = []
+    if os.path.exists(gamesavefile):
+        with open(gamesavefile, mode='r') as file:
+            lines = file.readlines()
+            header = lines[0].strip().split(',')
+            gamestate = lines[1].strip().split(',')+lines[2].strip().split(',')
+            table_data = [line.strip().split(',') for line in lines[3:]]
+        print(header, gamestate, table_data)
+        # return True, table_data, header
+    else:
+        # return False, [], []
+        print("err")
+
+def getprevgame():
+    if os.path.exists(gamesavefile):
+        with open(gamesavefile, mode='r') as file:
+            lines = file.readlines()
+            isrun = lines[1].strip().split(",")[1]
+            if isrun == "True":
+                return True
+    else:
+        return False
 
 def main_menu():
     global username
     clearscreen()
     while True:
         print("> Menu:")
-        print("1. Játék indítása")
-        print("2. Előző játékmenet betöltése")
-        print("3. Kilépés")
-
-        choice = input("Enter your choice (1/2/3): ")
-
-        if choice == "1":
-            start_configuration()
-            main()
-        elif choice == "2":
-            load_prev_game()
-        elif choice == "3":
-            print("Kilépés---")
-            break
+        if getprevgame():
+            print("1. Játék indítása")
+            print("2. Előző játékmenet betöltése")
+            print("3. Kilépés")
+            choice = input("Enter your choice (1/2/3): ")
+            if choice == "1":
+                start_configuration()
+                main()
+            elif choice == "2":
+                load_prev_game()
+            elif choice == "3":
+                print("Kilépés---")
+                break
+            else:
+                print("Ez nem egy lehetőség.")
         else:
-            print("Ez nem egy lehetőség.")
+            print("1. Játék indítása")
+            print("x. Előző játékmenet betöltése (Nem elérhető, nem található mentés.)")
+            print("2. Kilépés")
+            choice = input("Enter your choice (1/2): ")
+            if choice == "1":
+                start_configuration()
+                main()
+            elif choice == "2":
+                print("Kilépés---")
+                break
+            else:
+                print("Ez nem egy lehetőség.")
+
 
 
 def clearscreen():
@@ -52,6 +103,7 @@ def start_configuration():
             break
         else:
             print("Hibás bemenet. Kérlek, adj meg egy érvényes felhasználónevet.")
+    table_header[1] = username
 
     clearscreen()
     for row in player_data:
@@ -69,6 +121,9 @@ def start_configuration():
             break
         else:
             print("Hibás választás. Kérlek, válassz 1-t vagy 2-t.")
+
+    gamedatas[1][1], gamedatas[0][1] = difficulty, True
+
 
     if not 1 <= int(defined_difficulty) <= 2:
         print("Hibás választás UwU")
@@ -331,9 +386,11 @@ def main():
 
         game_runs += 1
         game_run = any(None in sublist for sublist in player_data)
+        save_table_to_file(player_data)
         input("Nyomj egy entert a folytatáshoz")
         # if game_runs > 8:
         #     game_run = False
+    save_table_to_file(None)
 
 def can_insert_data(combination, value, gamerunsnum, debug):
     id = playerfield(gamerunsnum)
