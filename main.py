@@ -88,28 +88,30 @@ def getprevgame():
 def gettopstat():
     clearscreen()
     try:
-        with open('toplist.json', 'r') as file:
-            toplist = json.load(file)
+        with open('toplist.txt', 'r') as file:
+            toplist = [line.strip().split(',') for line in file]
             print("Toplista:")
             for idx, entry in enumerate(toplist, 1):
-                print(f"{idx}. {entry['name']} - {entry['score']} pont")
+                print(f"{idx}. {entry[0]} - {entry[1]} pont")
             print("\n\n\n\n")
-    except (FileNotFoundError, json.JSONDecodeError):
+    except FileNotFoundError:
         print("Nincs elmentett toplista.")
 
 def save_to_top(name, score):
     try:
-        with open('toplist.json', 'r') as file:
-            toplist = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
+        with open('toplist.txt', 'r') as file:
+            toplist = [line.strip().split(',') for line in file]
+    except FileNotFoundError:
         toplist = []
 
-    toplist.append({'name': name, 'score': score})
-    toplist.sort(key=lambda x: x['score'], reverse=True)
+    toplist.append([name, str(score)])
+    toplist.sort(key=lambda x: int(x[1]), reverse=True)
     toplist = toplist[:10]
 
-    with open('toplist.json', 'w') as file:
-        json.dump(toplist, file)
+    with open('toplist.txt', 'w') as file:
+        for entry in toplist:
+            file.write(f"{entry[0]},{entry[1]}\n")
+
 
 def main_menu():
     global username
