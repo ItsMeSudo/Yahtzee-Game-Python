@@ -124,7 +124,7 @@ def main_menu():
                 print("2. Elozo jatekmenet betoltese")
                 print("3. Toplista megnezese")
                 print("4. Kilepes")
-                choice = input("Enter your choice (1/2/3/4): ")
+                choice = input("Ird be a valasztasod (1/2/3/4): ")
                 if choice == "1":
                     start_configuration()
                     main()
@@ -142,7 +142,7 @@ def main_menu():
                 print("2. Toplista megnezese")
                 print("x. Elozo jatekmenet betoltese (Nem elerheto, nem talalhato mentes.)")
                 print("3. Kilepes")
-                choice = input("Enter your choice (1/2/3): ")
+                choice = input("Ird be a valasztasod (1/2/3): ")
                 if choice == "1":
                     start_configuration()
                     main()
@@ -187,7 +187,7 @@ def start_configuration():
         print("> Add meg az ellenfeled nehezseget:")
         print("1. Konnyu")
         print("2. Nehez")
-        defined_difficulty = input("Enter your choice (1/2): ")
+        defined_difficulty = input("Ird be a valasztasod (1/2): ")
 
         if defined_difficulty.isdigit() and 1 <= int(defined_difficulty) <= 2:
             difficulty = 0 if int(defined_difficulty) == 1 else 1
