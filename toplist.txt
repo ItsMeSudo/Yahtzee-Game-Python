@@ -1,5 +1,10 @@
-Gép,126
+Gep,126
+Gep,109
 SUDO,97
-Gép,76
-SUDO,53
-Gép,48
+Patariki,97
+SUDO,92
+Gep,76
+SUDO,75
+Gep,70
+SUDO,70
+SUDO,69
