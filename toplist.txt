@@ -1,7 +1,7 @@
 Gep,126
 Gep,109
 SUDO,97
-Patariki,97
+SUDO,97
 SUDO,92
 Gep,76
 SUDO,75
