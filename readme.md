@@ -1,4 +1,5 @@
-## KockaPóker (Yahtzee) Game Documentation    infoprog-2024
+## infoprog-2024
+## KockaPóker (Yahtzee) Game Documentation    
 
 ### Introduction
 Welcome to KockaPóker, also known as Yahtzee! This document serves as a guide to understand the mechanics and functionalities of the game. KockaPóker is a classic dice-based tabletop game where players aim to fill various combinations on their scorecard based on the outcomes of rolling dice.
